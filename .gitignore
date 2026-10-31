@@ -1,0 +1,5 @@
+/examples/basic
+/examples/demo
+/examples/hard_cases
+/examples/smoke
+*.o

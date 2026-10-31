@@ -1,0 +1,2 @@
+// Native part: raylib itself plus the binding's C adapters.
+cmake_target = "raygoose_native";
