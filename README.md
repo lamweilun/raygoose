@@ -1,5 +1,7 @@
 # raygoose
 
+[![ci](https://github.com/lamweilun/raygoose/actions/workflows/ci.yml/badge.svg)](https://github.com/lamweilun/raygoose/actions/workflows/ci.yml)
+
 A [raylib](https://github.com/raysan5/raylib) binding for the
 [Goose](https://github.com/aardappel/goose) language, generated from raylib's
 own headers.
@@ -24,25 +26,25 @@ target's link closure. Nothing platform-specific is written in the binding.
 | target | what is verified |
 |---|---|
 | Linux x86-64 | built, all examples run |
-| Linux arm64 | `layout_check.c` and `shims.c` compile for the ABI |
-| macOS x86-64 / arm64 | `layout_check.c` and `shims.c` compile for the ABI |
-| Windows x64 / arm64 (MinGW ABI, LLP64) | `layout_check.c` and `shims.c` compile for the ABI |
-| Windows MSVC | same generated C; the MSVC static-assert path is `typedef`-based |
+| Windows x64, MSVC | CI: Goose built, binding generated, every example linked, headless smoke ran |
+| macOS arm64 | CI: same |
+| Windows x64 (MinGW ABI), Windows arm64 | `layout_check.c` and `shims.c` compile for the ABI |
+| macOS x86-64, Linux arm64 | `layout_check.c` and `shims.c` compile for the ABI |
 | 32-bit (x86, arm32, RPi 32-bit) | rejected at configure time, `sizeof(void*) != 8` |
 | Web, Android, iOS | not supported: different toolchains and asset packaging |
 
-The ABI checks are `just cross-check` (zig, compile only): all 231 `sizeof` and
+The CI jobs build raylib from source and run `examples/smoke.goose` — headless,
+so it works on a runner: raymath, a padded-struct return, the C `long` shim and
+`ffi::cstr`. The windowed examples are built but not run there. `just
+cross-check` covers the ABIs CI does not have a runner for: all 231 `sizeof` and
 `offsetof` assertions and every adapter compile against the real headers for
-LLP64 Windows and for arm64 macOS/Linux. The part not verified yet is the full
-raylib build and link on Windows/macOS — `.github/workflows/ci.yml` does build
-Goose, regenerate, build every example and run the headless smoke test on
-Ubuntu, Windows and macOS, but it has not run (the repo has no remote yet).
+LLP64 Windows and arm64 macOS/Linux.
 
 C `long` is the one type whose width differs (8 bytes on LP64, 4 on Windows), so
 it never crosses directly: `GetFileModTime` goes through a shim that widens to
-`int64_t`, keeping one Goose signature everywhere. `raymath`'s 146 inline
-functions get one-line C wrappers, so the binding does not depend on raylib
-exporting its inline math symbols.
+`int64_t`, keeping one Goose signature everywhere — the smoke test reads it on
+every platform. `raymath`'s 146 inline functions get one-line C wrappers, so the
+binding does not depend on raylib exporting its inline math symbols.
 
 ## Using it
 
@@ -109,11 +111,6 @@ Goose structs are **packed**, so where C inserts padding the generator writes
 `pad n` at the exact offset. `src/layout_check.c` asserts every `sizeof` and `offsetof` against the real
 headers, so a wrong layout breaks the build instead of the drawing.
 
-C `long` is 8 bytes on Linux/macOS and 4 on Windows, so it never crosses
-directly: `GetFileModTime` goes through a shim that widens to `int64_t`, keeping
-one Goose signature on every platform. `raymath`'s 146 inline functions get
-one-line C wrappers for the same reason.
-
 ### The three things that need C
 
 1. **Structs containing padding** cannot cross by value: `Sound`, `Music`,
@@ -178,8 +175,8 @@ the generated binding uses the static path.
   is unusable.
 - **64-bit only.** Pointers cross as `u64`, so 32-bit targets are refused at
   configure time.
-- **Windows and macOS are not run yet.** Their ABIs compile (`just cross-check`)
-  and CI builds them, but every example here has only been built and run on
+- **Windows and macOS are tested headless only.** CI builds every example there
+  and runs the smoke test; the windowed examples have only been watched on
   Linux x86-64.
 
 ## Regenerating
