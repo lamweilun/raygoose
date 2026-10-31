@@ -3,3 +3,4 @@
 /examples/hard_cases
 /examples/smoke
 *.o
+__pycache__/

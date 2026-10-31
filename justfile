@@ -1,5 +1,10 @@
 gen:
     python3 tools/gen_bindings.py
+    python3 tools/port_raymath.py
+
+# The raymath port against the C library, 146 functions.
+check-math:
+    python3 tools/check_raymath.py
 
 demo:
     goose run examples/demo.goose

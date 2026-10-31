@@ -4,9 +4,9 @@ import ffi;
 // No window: this runs headless on every platform, so CI can execute it.
 fn main() {
     // raymath is wrapped in C, so it links wherever raylib builds.
-    let sum = raylib::Vector2Add(raylib::Vector2 { 1.0, 2.0 }, raylib::Vector2 { 10.0, 20.0 });
+    let sum = raymath::Vector2Add(raylib::Vector2 { 1.0, 2.0 }, raylib::Vector2 { 10.0, 20.0 });
     assert(sum.x == 11.0 && sum.y == 22.0);
-    let m = raylib::MatrixTranslate(1.0, 2.0, 3.0);
+    let m = raymath::MatrixTranslate(1.0, 2.0, 3.0);
     assert(m.m12 == 1.0);
 
     // a padded struct returned by value, through the shim

@@ -36,7 +36,9 @@ jobs:
           echo "$RUNNER_TEMP/goose/build/Release" >> "$GITHUB_PATH"
 
       - name: Regenerate the binding
-        run: python tools/gen_bindings.py
+        run: |
+          python tools/gen_bindings.py
+          python tools/port_raymath.py
 
       - name: Build every example
         shell: bash
@@ -44,6 +46,10 @@ jobs:
           for f in examples/basic.goose examples/demo.goose examples/hard_cases.goose examples/smoke.goose; do
             goose build "$f"
           done
+
+      - name: Check the raymath port against the C library
+        if: runner.os == 'Linux'
+        run: python tools/check_raymath.py
 
       - name: Run the headless smoke test
         shell: bash

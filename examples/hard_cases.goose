@@ -7,9 +7,9 @@ fn main() {
     raylib::InitAudioDevice();
 
     // raymath is a header-only library in C, exported by the raylib build.
-    let a = raylib::Vector2Add(raylib::Vector2 { 1.0, 2.0 }, raylib::Vector2 { 10.0, 20.0 });
-    let m = raylib::MatrixTranslate(1.0, 2.0, 3.0);
-    let n = raylib::Vector3Normalize(raylib::Vector3 { 3.0, 4.0, 0.0 });
+    let a = raymath::Vector2Add(raylib::Vector2 { 1.0, 2.0 }, raylib::Vector2 { 10.0, 20.0 });
+    let m = raymath::MatrixTranslate(1.0, 2.0, 3.0);
+    let n = raymath::Vector3Normalize(raylib::Vector3 { 3.0, 4.0, 0.0 });
     print("raymath: ", a.x, " ", a.y, " | ", n.x, " ", n.y, " | m12=", m.m12, "\n");
 
     // raylib-owned C strings come back as u64 and are copied with ffi::cstr.
