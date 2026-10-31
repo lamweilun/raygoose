@@ -8,12 +8,6 @@ own headers.
 
 ![the demo running](docs/demo.png)
 
-Works today: **782 functions** from `raylib.h` and `rlgl.h`, **146 functions**
-of `raymath` ported to Goose, **38 structs**, **~530 constants**, plus
-string-taking overloads of the calls that need a C string. Goose calls raylib's
-C functions directly — there is no marshalling layer at runtime, only the C
-adapters listed below.
-
 Pinned to raylib `8413b068` (v6.5-dev), built from the `vendor/raylib` submodule,
 and tested with Goose `v2026.3-252-g2ed1a63d`.
 
