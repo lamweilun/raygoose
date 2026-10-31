@@ -36,7 +36,7 @@ target's link closure. Nothing platform-specific is written in the binding.
 
 The CI jobs build raylib from source and run `examples/smoke.goose` — headless,
 so it works on a runner: raymath, a padded-struct return, the C `long` shim and
-`ffi::cstr`. The windowed examples are built but not run there. `just
+`ffi::cstr`. The windowed examples are built but not run there. `make
 cross-check` covers the ABIs CI does not have a runner for: all 231 `sizeof` and
 `offsetof` assertions and every adapter compile against the real headers for
 LLP64 Windows and arm64 macOS/Linux.
@@ -48,10 +48,6 @@ every platform. `raymath` is not bound at all: it is a Goose port, tested
 against the C library on every build of the binding (`tools/check_raymath.py`).
 
 ## Using it
-
-```sh
-git clone --recurse-submodules https://github.com/lamweilun/raygoose
-```
 
 A program needs one import line; no build file of its own:
 
@@ -76,11 +72,20 @@ fn main() {
 goose run app.goose     # first build compiles raylib, later runs are cached
 ```
 
-Inside this repository:
+## Getting the source
 
 ```sh
-just demo               # build and run examples/demo.goose
-just gen                # regenerate raylib.goose and src/*.c from the headers
+git clone --recurse-submodules https://github.com/lamweilun/raygoose
+```
+
+`vendor/raylib` is a submodule: clone with `--recurse-submodules`, or run
+`git submodule update --init --recursive` afterwards. Then, inside the
+repository:
+
+```sh
+make demo               # build and run examples/demo.goose
+make gen                # regenerate raylib.goose, raymath.goose and src/*.c
+make check              # build every example
 ```
 
 Examples:
@@ -210,7 +215,7 @@ dropped); three functions with out-parameters or a `switch` are hand-written
 in it, and `check_raymath.py` builds both the C and the Goose versions, runs
 them on the same inputs and compares the results as C floats.
 
-Updating raylib: `git -C vendor/raylib checkout <tag> && just gen`, then
+Updating raylib: `git -C vendor/raylib checkout <tag> && make gen`, then
 build the examples. The layout asserts catch struct changes; new variadic or
 callback functions show up as skipped declarations in the generator log.
 
