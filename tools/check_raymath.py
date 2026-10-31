@@ -37,6 +37,9 @@ def values(ty, k):
     if ty == "float":
         v = FLOATS[k % len(FLOATS)]
         return f"{v}f", f"{v}"
+    if ty == "double":
+        v = FLOATS[k % len(FLOATS)]
+        return f"{v}", f"{v}"
     if ty == "int":
         return str(INTS[k % len(INTS)]), str(INTS[k % len(INTS)])
     if ty == "bool":
@@ -62,6 +65,8 @@ def show_c(ty, expr):
     ty = ty.replace("const ", "").strip()
     if ty == "float":
         return f'printf("%.9g ", (double){expr});'
+    if ty == "double":
+        return f'printf("%.17g ", {expr});'
     if ty == "int":
         return f'printf("%d ", {expr});'
     if ty == "bool":
@@ -81,7 +86,7 @@ def show_c(ty, expr):
 def gvals(ty, expr):
     """Goose expressions for the components of a value."""
     ty = ty.replace("const ", "").strip()
-    if ty in ("float", "int", "bool"):
+    if ty in ("float", "double", "int", "bool"):
         return [expr]
     if ty in ("Vector2", "Vector3", "Vector4", "Quaternion"):
         fields = {"Vector2": "xy", "Vector3": "xyz",
@@ -188,7 +193,9 @@ def close(a, b):
         return a == b
     tol = float(os.environ.get("RAYMATH_TOL", "0"))
     if tol == 0:
-        return as_f32(a) == as_f32(b)
+        if as_f32(a) == as_f32(b):
+            return True
+        return abs(a - b) <= 1e-12 * max(1.0, abs(a), abs(b))
     return abs(a - b) <= tol * max(1.0, abs(a), abs(b))
 
 

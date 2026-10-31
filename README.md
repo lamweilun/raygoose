@@ -245,9 +245,34 @@ dropped); three functions with out-parameters or a `switch` are hand-written
 in it, and `check_raymath.py` builds both the C and the Goose versions, runs
 them on the same inputs and compares the results as C floats.
 
-Updating raylib: `git -C vendor/raylib checkout <tag> && make gen`, then
-build the examples. The layout asserts catch struct changes; new variadic or
-callback functions show up as skipped declarations in the generator log.
+### Updating raylib
+
+```sh
+make bump RAYLIB=6.2     # a tag or any commit
+```
+
+That moves the pin in `vendor/raylib`, regenerates both files, builds every
+example and runs the raymath comparison. Commit the submodule pointer and the
+regenerated files together; CI then proves the result on Linux, Windows and
+macOS.
+
+What usually needs a hand:
+
+- **Struct changes** are caught by `src/layout_check.c`. The generator
+  recomputes the `pad n` fields, and the asserts fail loudly if a field moved,
+  so a layout change cannot slip through silently.
+- **raymath is translated, not bound.** `port_raymath.py` stops with the
+  function and the statement it cannot translate — that is how the
+  `MatrixPerspective`/`MatrixOrtho` `double`-to-`float` change between 6.2 and
+  master showed up. Fix the translator, or add the function to its `HAND`
+  table.
+- **New variadic functions or callbacks** are skipped by the generator; watch
+  for "skipped declaration" lines and add a shim next to the existing ones.
+- Anything else — new functions, structs, enums, pointer returns — comes
+  through without work.
+
+Regenerating takes seconds; the slow part is raylib compiling once per
+compiler, which Goose caches under `~/.goose/build`.
 
 ## AI disclosure
 

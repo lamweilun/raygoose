@@ -1,6 +1,6 @@
 # Convenience targets. Goose does the building; these just save typing.
 
-.PHONY: all gen check demo basic hard smoke check-math cross-check clean
+.PHONY: all gen check demo basic hard smoke check-math cross-check bump clean
 
 all: check
 
@@ -40,6 +40,16 @@ cross-check:
 	zig cc -target aarch64-macos -std=c11 -c src/layout_check.c -I vendor/raylib/src -o /tmp/raygoose-layout-mac.o
 	zig cc -target aarch64-macos -std=c11 -c src/shims.c -I vendor/raylib/src -o /tmp/raygoose-shims-mac.o
 	zig cc -target aarch64-linux-gnu -std=c11 -c src/layout_check.c -I vendor/raylib/src -o /tmp/raygoose-layout-arm.o
+
+# Point vendor/raylib at another tag or commit and rebuild everything.
+#   make bump RAYLIB=6.2
+bump:
+	@test -n "$(RAYLIB)" || (echo "usage: make bump RAYLIB=<tag or commit>"; exit 1)
+	git -C vendor/raylib fetch --tags
+	git -C vendor/raylib checkout $(RAYLIB)
+	$(MAKE) gen
+	$(MAKE) check
+	$(MAKE) check-math
 
 clean:
 	rm -f examples/basic examples/demo examples/hard_cases examples/smoke

@@ -23,6 +23,7 @@ OUT = ROOT / "raymath.goose"
 TYPES = {
     "void": None,
     "float": "f32",
+    "double": "f64",
     "int": "i32",
     "bool": "bool",
     "unsigned int": "u32",
@@ -306,11 +307,48 @@ def gtype(ty, ptr=False):
     return base + ("&" if ptr else "")
 
 
+def cast_operand(e, i):
+    """End index and text of the operand after a C cast at e[i:]."""
+    if e[i] == "(":
+        depth = 0
+        for j in range(i, len(e)):
+            if e[j] == "(":
+                depth += 1
+            elif e[j] == ")":
+                depth -= 1
+                if depth == 0:
+                    return j + 1, e[i:j + 1]
+    m = re.match(r"[A-Za-z_][\w.]*|-?[0-9][0-9.eE+-]*", e[i:])
+    if m:
+        return i + m.end(), m.group(0)
+    return i, ""
+
+
+def strip_casts(e):
+    """`(float)x` -> `(x as f32)`, which is what C's narrowing means here."""
+    out, i = "", 0
+    while i < len(e):
+        m = re.match(r"\((float|double|int|unsigned)\)", e[i:])
+        if m:
+            g = {"float": "f32", "double": "f64", "int": "i32", "unsigned": "u32"}[m.group(1)]
+            j = i + m.end()
+            k, operand = cast_operand(e, j)
+            if not operand:
+                out += e[i:k]
+                i = k
+                continue
+            out += f"({operand} as {g})"
+            i = k
+        else:
+            out += e[i]
+            i += 1
+    return out
+
+
 def expr(e):
     """Translate a C expression to Goose."""
     e = e.replace("->", ".")
-    e = re.sub(r"\b(float|int|double|unsigned)\s*\)", ")", e)  # (float)x -> (x)
-    e = re.sub(r"\(float\)", "", e)
+    e = strip_casts(e)
     for c, g in MATHF.items():
         e = re.sub(r"\b%s\b" % c, g, e)
     e = re.sub(r"\b([0-9]+\.[0-9]*|\.[0-9]+|[0-9]+(?=[eE]))([eE][-+]?[0-9]+)?f\b", r"\1\2", e)
@@ -524,7 +562,7 @@ def translate_stmt(t):
         if arr:
             count = arr.strip("[]")
             if init.strip() in ("{ 0 }", "{0}"):
-                zero = "0.0" if ty == "f32" else f"default<{ty}>()"
+                zero = "0.0" if ty in ("f32", "f64") else f"default<{ty}>()"
                 return [f"var {name}: {ty}[{count}] = [{zero}; {count}];"]
             return [f"var {name}: {ty}[{count}] = {literal(ty, init)};"]
         # `float a = x, b = y;` declares several names
@@ -593,7 +631,7 @@ def decl_lines(ty, name, init):
 
 def fallback(ty, e):
     e = expr(e)
-    if ty in ("f32", "i32", "u32"):
+    if ty in ("f32", "f64", "i32", "u32"):
         return e
     if ty == "bool":
         return e
