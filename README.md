@@ -276,11 +276,9 @@ compiler, which Goose caches under `~/.goose/build`.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-raylib itself, vendored as the `vendor/raylib` submodule, is under the
-[zlib license](vendor/raylib/LICENSE); it is not covered by the MIT license
-above.
+zlib, the same license as raylib — see [LICENSE](LICENSE). raylib and raymath,
+vendored as the `vendor/raylib` submodule and ported into `raymath.goose`, are
+under that same license.
 
 ## AI disclosure
 
