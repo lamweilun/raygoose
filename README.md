@@ -56,7 +56,7 @@ git clone --recurse-submodules https://github.com/lamweilun/raygoose
 A program needs one import line; no build file of its own:
 
 ```goose
-import raylib from "https://github.com/lamweilun/raygoose@master";
+import raylib from "https://github.com/lamweilun/raygoose@main";
 
 fn main() {
     raylib::InitWindow(800, 450, "hello");
