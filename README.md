@@ -249,23 +249,6 @@ Updating raylib: `git -C vendor/raylib checkout <tag> && make gen`, then
 build the examples. The layout asserts catch struct changes; new variadic or
 callback functions show up as skipped declarations in the generator log.
 
-## Next steps worth doing
-
-1. Callback trampolines: `export fn` hook + a C installer per callback
-   (`SetTraceLogCallback` needs `va_list`, so a formatting trampoline).
-2. Port `physac` (2D physics): bodies are heap pointers with public fields in C,
-   so a port with a fixed pool of 64 bodies and index handles fits Goose better
-   than wrapping it. Do not name the package `physics`: that name is blessed to
-   `goose_physics` (3D Box3D).
-3. Slice-based wrappers for the pointer+count pairs (`LoadFontData`,
-   `TextSplit`, `DrawTriangleFan`, ...), which are the remaining ergonomic
-   rough edge.
-4. Split the generated file per module (core/shapes/textures/text/models/audio/
-   rlgl) once Goose's multi-file package story matters for compile time.
-5. Callback trampolines, so `SetTraceLogCallback` and the file callbacks can be
-   installed from Goose through exported functions.
-5. `raygui` and `physac` on the same generator; both are single-header C.
-
 ## AI disclosure
 
 This project was written with an AI coding agent (OpenCode) working under a
