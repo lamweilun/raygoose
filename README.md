@@ -274,6 +274,14 @@ What usually needs a hand:
 Regenerating takes seconds; the slow part is raylib compiling once per
 compiler, which Goose caches under `~/.goose/build`.
 
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+raylib itself, vendored as the `vendor/raylib` submodule, is under the
+[zlib license](vendor/raylib/LICENSE); it is not covered by the MIT license
+above.
+
 ## AI disclosure
 
 This project was written with an AI coding agent (OpenCode) working under a
