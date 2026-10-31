@@ -47,6 +47,36 @@ it never crosses directly: `GetFileModTime` goes through a shim that widens to
 every platform. `raymath` is not bound at all: it is a Goose port, tested
 against the C library on every build of the binding (`tools/check_raymath.py`).
 
+## What is covered
+
+Three headers, plus what they need to be usable:
+
+| header | how | contents |
+|---|---|---|
+| `raylib.h` | `extern fn` | 619 functions — core/window, shapes, textures, text, models, audio, camera, gestures — 35 structs, 22 enums |
+| `raymath.h` | Goose port, `namespace raymath` | 146 functions over the same `Vector2/3/4/Matrix/Quaternion` types |
+| `rlgl.h` | `extern fn` | 163 functions, `rlVertexBuffer`/`rlDrawCall`/`rlRenderBatch`, 12 enums and the `RL_*` constants |
+| types and constants | generated | 38 structs and ~530 constants (enums, `FLAG_*`, `RL_*`, the 26 color macros) |
+
+Nine of the 38 structs contain C padding and cross by pointer through
+`src/shims.c`; everything else crosses by value. `raymath` is not bound at all,
+it is Goose code.
+
+**Not covered yet:**
+
+- `raygui` and `physac` — neither is part of raylib 6.5 (`raygui` ships as a
+  header in the examples, `physac` is a separate, unmaintained repository).
+- `rcamera`'s `GetCameraForward/Up/Right` — exported by the library but not
+  declared in `raylib.h`; the two `UpdateCamera*` functions are covered.
+- `rgestures`' internal `ProcessGestureEvent`/`UpdateGestures` — they take an
+  internal event struct; the 8 public gesture functions are covered.
+- The callbacks: `SetTraceLogCallback` (it takes a `va_list`), the four file
+  callbacks and the audio processor callbacks. Goose has no function pointers.
+- `TextFormat` — variadic; use Goose's `str(...)`.
+- `rlLoadExtensions` — takes a function pointer.
+
+Everything else in the raylib repository is examples, templates and resources.
+
 ## Using it
 
 A program needs one import line; no build file of its own:
