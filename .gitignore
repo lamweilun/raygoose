@@ -2,5 +2,6 @@
 /examples/demo
 /examples/hard_cases
 /examples/smoke
+/examples/callbacks
 *.o
 __pycache__/

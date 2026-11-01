@@ -43,7 +43,7 @@ jobs:
       - name: Build every example
         shell: bash
         run: |
-          for f in examples/basic.goose examples/demo.goose examples/hard_cases.goose examples/smoke.goose; do
+          for f in examples/basic.goose examples/demo.goose examples/hard_cases.goose examples/smoke.goose examples/callbacks.goose; do
             goose build "$f"
           done
 
@@ -51,9 +51,11 @@ jobs:
         if: runner.os == 'Linux'
         run: python tools/check_raymath.py
 
-      - name: Run the headless smoke test
+      - name: Run the headless tests
         shell: bash
         run: |
-          exe=examples/smoke
-          [ -f "$exe.exe" ] && exe="$exe.exe"
-          "./$exe"
+          for name in smoke callbacks; do
+            exe="examples/$name"
+            [ -f "$exe.exe" ] && exe="$exe.exe"
+            "./$exe"
+          done

@@ -1891,3 +1891,35 @@ fn LoadMusicStream(path: const u8[:]) -> Music {
     return LoadMusicStream(t[0]);
 }
 
+// ------------------------------ callbacks
+// Goose has no function-pointer values, so a raylib callback is a fixed export
+// the program defines; the C trampoline in src/callbacks/ calls it. A program
+// that installs one must define the matching export:
+//
+//   export fn raylib_trace_log_callback(level: i32, text: u64)
+//   export fn raylib_load_file_data_callback(file_name: u64) -> const u8[:]
+//   export fn raylib_save_file_data_callback(file_name: u64, data: u64, data_size: i32) -> bool
+//   export fn raylib_load_file_text_callback(file_name: u64) -> const u8[:]
+//   export fn raylib_save_file_text_callback(file_name: u64, text: u64) -> bool
+//
+// C strings arrive as u64 and are valid only during the call; read them with
+// ffi::cstr or ffi::bytes. Returned slices are copied before the trampoline
+// returns, so a global buffer is enough. The audio processor callbacks are not
+// bound: raylib runs them on the mixer thread and they edit the buffer in
+// place.
+
+extern fn rg_set_trace_log_callback() = "rg_set_trace_log_callback";
+fn SetTraceLogCallback() { rg_set_trace_log_callback(); }
+
+extern fn rg_set_load_file_data_callback() = "rg_set_load_file_data_callback";
+fn SetLoadFileDataCallback() { rg_set_load_file_data_callback(); }
+
+extern fn rg_set_save_file_data_callback() = "rg_set_save_file_data_callback";
+fn SetSaveFileDataCallback() { rg_set_save_file_data_callback(); }
+
+extern fn rg_set_load_file_text_callback() = "rg_set_load_file_text_callback";
+fn SetLoadFileTextCallback() { rg_set_load_file_text_callback(); }
+
+extern fn rg_set_save_file_text_callback() = "rg_set_save_file_text_callback";
+fn SetSaveFileTextCallback() { rg_set_save_file_text_callback(); }
+

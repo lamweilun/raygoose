@@ -6,8 +6,6 @@ A [raylib](https://github.com/raysan5/raylib) binding for the
 [Goose](https://github.com/aardappel/goose) language, generated from raylib's
 own headers.
 
-![the demo running](docs/demo.png)
-
 Pinned to raylib `8413b068` (v6.5-dev), built from the `vendor/raylib` submodule,
 and tested with Goose `v2026.3-252-g2ed1a63d`.
 
@@ -28,9 +26,10 @@ target's link closure. Nothing platform-specific is written in the binding.
 | 32-bit (x86, arm32, RPi 32-bit) | rejected at configure time, `sizeof(void*) != 8` |
 | Web, Android, iOS | not supported: different toolchains and asset packaging |
 
-The CI jobs build raylib from source and run `examples/smoke.goose` — headless,
-so it works on a runner: raymath, a padded-struct return, the C `long` shim and
-`ffi::cstr`. The windowed examples are built but not run there. `make
+The CI jobs build raylib from source and run two headless programs, so they work
+on a runner: `examples/smoke.goose` (raymath, a padded-struct return, the C
+`long` shim, `ffi::cstr`) and `examples/callbacks.goose` (the trace log and the
+four file callbacks). The windowed examples are built but not run there. `make
 cross-check` covers the ABIs CI does not have a runner for: all 231 `sizeof` and
 `offsetof` assertions and every adapter compile against the real headers for
 LLP64 Windows and arm64 macOS/Linux.
@@ -64,10 +63,16 @@ it is Goose code.
   declared in `raylib.h`; the two `UpdateCamera*` functions are covered.
 - `rgestures`' internal `ProcessGestureEvent`/`UpdateGestures` — they take an
   internal event struct; the 8 public gesture functions are covered.
-- The callbacks: `SetTraceLogCallback` (it takes a `va_list`), the four file
-  callbacks and the audio processor callbacks. Goose has no function pointers.
+- The audio callbacks — `SetAudioStreamCallback` and the two
+  `AttachAudio*Processor` functions. raylib runs them on the mixer thread and
+  they rewrite the sample buffer in place; a Goose export must stay on the
+  thread that ran `goose_init` and there is no pointer write. The trace log and
+  the four file callbacks are covered, through fixed exports (see
+  [Callbacks](#callbacks)).
 - `TextFormat` — variadic; use Goose's `str(...)`.
-- `rlLoadExtensions` — takes a function pointer.
+- `rlLoadExtensions` — it wants a GL procedure loader, and the one address
+  raylib can offer, `rlGetProcAddress`, calls that loader, so a Goose callback
+  would recurse.
 
 Everything else in the raylib repository is examples, templates and resources.
 
@@ -107,9 +112,9 @@ git clone --recurse-submodules https://github.com/lamweilun/raygoose
 repository:
 
 ```sh
-make demo               # build and run examples/demo.goose
-make gen                # regenerate raylib.goose, raymath.goose and src/*.c
-make check              # build every example
+goose run examples/demo.goose   # build and run the demo
+make gen                        # regenerate raylib.goose, raymath.goose and src/*.c
+make check                      # build every example
 ```
 
 Examples:
@@ -120,6 +125,7 @@ Examples:
 | `examples/demo.goose` | ergonomic layer, custom font, formatted text, 24 bouncing balls |
 | `examples/hard_cases.goose` | raymath, rlgl, audio, render textures, ray casts, `ffi::cstr` |
 | `examples/smoke.goose` | headless: raymath, a padded struct return, the C `long` shim, `ffi::cstr` |
+| `examples/callbacks.goose` | headless: the trace log and the four file callbacks |
 
 ## How the binding works
 
@@ -141,7 +147,7 @@ Goose structs are **packed**, so where C inserts padding the generator writes
 `pad n` at the exact offset. `src/layout_check.c` asserts every `sizeof` and `offsetof` against the real
 headers, so a wrong layout breaks the build instead of the drawing.
 
-### The three things that need C
+### The four things that need C
 
 1. **Structs containing padding** cannot cross by value: `Sound`, `Music`,
    `AudioStream`, `Mesh`, `ModelSkeleton`, `Shader`, `RayCollision`,
@@ -154,9 +160,51 @@ headers, so a wrong layout breaks the build instead of the drawing.
 3. **NULL pointers.** Goose references are never null, so functions that accept
    NULL (`LoadFontEx` with no codepoints, shader value pointers) go through
    shims. `src/shims.c` holds all of them; 89 of the 782 functions use one.
+4. **Callbacks.** Goose has no function-pointer values, so the five setters take
+   no argument and install a C trampoline that calls a fixed export in the
+   program (see [Callbacks](#callbacks)). `src/callbacks/` holds one file per
+   callback.
 
 Everything else is a direct `extern fn` call — the same call the C compiler
 would emit.
+
+### Callbacks
+
+Goose has no function-pointer values, so a callback cannot be passed. The five
+that can be bound are setters with no argument; the program defines the fixed
+export the trampoline in `src/callbacks/` calls:
+
+| binding call | export the program defines |
+|---|---|
+| `SetTraceLogCallback()` | `raylib_trace_log_callback(level: i32, text: u64)` |
+| `SetLoadFileDataCallback()` | `raylib_load_file_data_callback(file_name: u64) -> const u8[:]` |
+| `SetSaveFileDataCallback()` | `raylib_save_file_data_callback(file_name: u64, data: u64, data_size: i32) -> bool` |
+| `SetLoadFileTextCallback()` | `raylib_load_file_text_callback(file_name: u64) -> const u8[:]` |
+| `SetSaveFileTextCallback()` | `raylib_save_file_text_callback(file_name: u64, text: u64) -> bool` |
+
+C strings arrive as `u64`; `ffi::cstr` and `ffi::bytes` copy them, and they are
+valid only during the call. A loader returns a slice backed by a global buffer;
+the trampoline copies it into raylib's allocator before returning. Installing a
+callback is what pulls its C object in, so a program that installs none of them
+never has to define any export, and `Set*Callback(0)` still restores raylib's
+default. The handlers run on the main thread, inside whatever raylib call
+triggered them.
+
+```goose
+import raylib from "https://github.com/lamweilun/raygoose@main";
+import ffi;
+
+export fn raylib_trace_log_callback(level: i32, text: u64) {
+    print(level, ": ", ffi::cstr(text), "\n");
+}
+
+fn main() {
+    raylib::SetTraceLogCallback();
+    raylib::InitWindow(800, 450, "hello");
+}
+```
+
+`examples/callbacks.goose` is the headless test for all five.
 
 ### raymath is ported, not bound
 
@@ -200,10 +248,10 @@ the generated binding uses the static path.
 
 ## Limitations
 
-- **Callbacks are not bound.** Goose has no function pointers; `export fn` has a
-  C symbol but no addressable value. `SetTraceLogCallback`, the four file
-  callbacks and the audio processor callbacks are unreachable without a C
-  trampoline per callback. Fixable, not done yet.
+- **Audio callbacks are not bound.** Goose has no function pointers and its
+  exports must stay on the thread that ran `goose_init`; raylib's audio
+  processors run on the mixer thread and write the sample buffer in place. The
+  trace log and the four file callbacks are covered — see [Callbacks](#callbacks).
 - **`TextFormat` is missing on purpose.** Use `str()`.
 - **No pointer arithmetic.** `Mesh.vertices`, `Font.recs`, `Model.meshes`,
   `FilePathList.paths` and friends are opaque `u64` handles. You can pass them
@@ -260,8 +308,10 @@ What usually needs a hand:
   `MatrixPerspective`/`MatrixOrtho` `double`-to-`float` change between 6.2 and
   master showed up. Fix the translator, or add the function to its `HAND`
   table.
-- **New variadic functions or callbacks** are skipped by the generator; watch
-  for "skipped declaration" lines and add a shim next to the existing ones.
+- **New variadic functions** are skipped by the generator; watch for "skipped
+  declaration" lines and add a shim next to the existing ones. A new callback
+  setter needs a trampoline in `src/callbacks/` and a no-arg wrapper in the
+  ergonomic block.
 - Anything else — new functions, structs, enums, pointer returns — comes
   through without work.
 

@@ -15,8 +15,19 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 add_subdirectory(vendor/raylib raylib_build)
 
 # The adapters the binding needs (variadics, padded structs, C `long`, raymath
-# inline wrappers) plus the layout asserts that keep the generated structs
-# honest against the real headers on every target.
-add_library(raygoose_native STATIC src/shims.c src/layout_check.c)
+# inline wrappers, callback trampolines) plus the layout asserts that keep the
+# generated structs honest against the real headers on every target.
+#
+# Each callback is its own object: a program that installs one must export the
+# matching handler, and the linker only pulls the object it calls, so a program
+# that uses none of them never has to define any.
+add_library(raygoose_native STATIC
+    src/shims.c
+    src/layout_check.c
+    src/callbacks/trace_log.c
+    src/callbacks/load_file_data.c
+    src/callbacks/save_file_data.c
+    src/callbacks/load_file_text.c
+    src/callbacks/save_file_text.c)
 target_include_directories(raygoose_native PRIVATE vendor/raylib/src)
 target_link_libraries(raygoose_native PUBLIC raylib)

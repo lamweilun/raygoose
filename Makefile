@@ -1,6 +1,6 @@
 # Convenience targets. Goose does the building; these just save typing.
 
-.PHONY: all gen check demo basic hard smoke check-math cross-check bump clean
+.PHONY: all gen check check-math cross-check bump clean
 
 all: check
 
@@ -15,18 +15,7 @@ check:
 	goose build examples/demo.goose
 	goose build examples/hard_cases.goose
 	goose build examples/smoke.goose
-
-demo:
-	goose run examples/demo.goose
-
-basic:
-	goose run examples/basic.goose
-
-hard:
-	goose run examples/hard_cases.goose
-
-smoke:
-	goose run examples/smoke.goose
+	goose build examples/callbacks.goose
 
 # The raymath port against the C library, 146 functions.
 check-math:
@@ -52,4 +41,4 @@ bump:
 	$(MAKE) check-math
 
 clean:
-	rm -f examples/basic examples/demo examples/hard_cases examples/smoke
+	rm -f examples/basic examples/demo examples/hard_cases examples/smoke examples/callbacks
