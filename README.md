@@ -81,7 +81,7 @@ Everything else in the raylib repository is examples, templates and resources.
 A program needs one import line; no build file of its own:
 
 ```goose
-import raylib from "https://github.com/lamweilun/raygoose@main";
+import raylib from "https://github.com/lamweilun/raygoose@v0.1.0";
 
 fn main() {
     raylib::InitWindow(800, 450, "hello");
@@ -191,7 +191,7 @@ default. The handlers run on the main thread, inside whatever raylib call
 triggered them.
 
 ```goose
-import raylib from "https://github.com/lamweilun/raygoose@main";
+import raylib from "https://github.com/lamweilun/raygoose@v0.1.0";
 import ffi;
 
 export fn raylib_trace_log_callback(level: i32, text: u64) {
