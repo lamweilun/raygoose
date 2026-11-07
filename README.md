@@ -6,8 +6,8 @@ A [raylib](https://github.com/raysan5/raylib) binding for the
 [Goose](https://github.com/aardappel/goose) language, generated from raylib's
 own headers.
 
-Pinned to raylib `8413b068` (v6.5-dev), built from the `vendor/raylib` submodule,
-and tested with Goose `v2026.3-252-g2ed1a63d`.
+Pinned to raylib `4bfb72d8` (v6.5-dev), built from the `vendor/raylib` submodule,
+and tested with Goose `v2026.4`.
 
 ## Platforms
 
