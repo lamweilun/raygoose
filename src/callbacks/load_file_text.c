@@ -1,11 +1,12 @@
 // SetLoadFileTextCallback: the program returns a slice; C copies it into a
 // NUL-terminated buffer raylib can free with its own allocator.
+#include "callback_export.h"
 #include "raylib.h"
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
-extern const uint8_t *raylib_load_file_text_callback(uint64_t file_name, int64_t *out_len);
+RG_PROGRAM_EXPORT(const uint8_t *, raylib_load_file_text_callback, uint64_t file_name, int64_t *out_len);
 
 static char *rg_load_file_text_trampoline(const char *fileName) {
     int64_t len = 0;
@@ -24,5 +25,9 @@ static char *rg_load_file_text_trampoline(const char *fileName) {
 }
 
 void rg_set_load_file_text_callback(void) {
+    if (!RG_PROGRAM_EXPORT_BOUND(raylib_load_file_text_callback)) {
+        rg_program_export_missing("SetLoadFileTextCallback", "raylib_load_file_text_callback");
+        return;
+    }
     SetLoadFileTextCallback(rg_load_file_text_trampoline);
 }

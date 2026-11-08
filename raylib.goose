@@ -1902,6 +1902,11 @@ fn LoadMusicStream(path: const u8[:]) -> Music {
 //   export fn raylib_load_file_text_callback(file_name: u64) -> const u8[:]
 //   export fn raylib_save_file_text_callback(file_name: u64, text: u64) -> bool
 //
+// A setter whose export the program does not define installs nothing and says
+// so on stderr: `goose run` cannot bind exports at all (the package's library
+// loads before the program is compiled into the same process), so a program
+// that installs a callback needs `goose build`.
+//
 // C strings arrive as u64 and are valid only during the call; read them with
 // ffi::cstr or ffi::bytes. Returned slices are copied before the trampoline
 // returns, so a global buffer is enough. The audio processor callbacks are not

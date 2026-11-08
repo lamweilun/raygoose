@@ -1,9 +1,10 @@
 // SetSaveFileTextCallback: the text is only read, so the program gets the
 // C string and copies it with ffi::cstr.
+#include "callback_export.h"
 #include "raylib.h"
 #include <stdint.h>
 
-extern uint8_t raylib_save_file_text_callback(uint64_t file_name, uint64_t text);
+RG_PROGRAM_EXPORT(uint8_t, raylib_save_file_text_callback, uint64_t file_name, uint64_t text);
 
 static bool rg_save_file_text_trampoline(const char *fileName, const char *text) {
     return raylib_save_file_text_callback((uint64_t)(uintptr_t)fileName,
@@ -11,5 +12,9 @@ static bool rg_save_file_text_trampoline(const char *fileName, const char *text)
 }
 
 void rg_set_save_file_text_callback(void) {
+    if (!RG_PROGRAM_EXPORT_BOUND(raylib_save_file_text_callback)) {
+        rg_program_export_missing("SetSaveFileTextCallback", "raylib_save_file_text_callback");
+        return;
+    }
     SetSaveFileTextCallback(rg_save_file_text_trampoline);
 }

@@ -20,10 +20,13 @@ add_subdirectory(vendor/raylib raylib_build)
 #
 # Each callback is its own object: a program that installs one must export the
 # matching handler, and the linker only pulls the object it calls, so a program
-# that uses none of them never has to define any.
+# that uses none of them never has to define any. The reference to the handler
+# is weak because a `goose run` loads the JIT library before the program exists
+# (src/callbacks/callback_export.h).
 add_library(raygoose_native STATIC
     src/shims.c
     src/layout_check.c
+    src/callbacks/callback_export.c
     src/callbacks/trace_log.c
     src/callbacks/load_file_data.c
     src/callbacks/save_file_data.c

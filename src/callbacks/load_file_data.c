@@ -1,11 +1,12 @@
 // SetLoadFileDataCallback: the program returns a slice, which cannot outlive
 // the call, so C copies it into memory raylib can free with its own allocator.
+#include "callback_export.h"
 #include "raylib.h"
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
-extern const uint8_t *raylib_load_file_data_callback(uint64_t file_name, int64_t *out_len);
+RG_PROGRAM_EXPORT(const uint8_t *, raylib_load_file_data_callback, uint64_t file_name, int64_t *out_len);
 
 static unsigned char *rg_load_file_data_trampoline(const char *fileName, int *dataSize) {
     int64_t len = 0;
@@ -29,5 +30,9 @@ static unsigned char *rg_load_file_data_trampoline(const char *fileName, int *da
 }
 
 void rg_set_load_file_data_callback(void) {
+    if (!RG_PROGRAM_EXPORT_BOUND(raylib_load_file_data_callback)) {
+        rg_program_export_missing("SetLoadFileDataCallback", "raylib_load_file_data_callback");
+        return;
+    }
     SetLoadFileDataCallback(rg_load_file_data_trampoline);
 }

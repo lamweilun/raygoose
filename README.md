@@ -184,11 +184,17 @@ export the trampoline in `src/callbacks/` calls:
 
 C strings arrive as `u64`; `ffi::cstr` and `ffi::bytes` copy them, and they are
 valid only during the call. A loader returns a slice backed by a global buffer;
-the trampoline copies it into raylib's allocator before returning. Installing a
-callback is what pulls its C object in, so a program that installs none of them
-never has to define any export, and `Set*Callback(0)` still restores raylib's
-default. The handlers run on the main thread, inside whatever raylib call
-triggered them.
+the trampoline copies it into raylib's allocator before returning. The handlers
+run on the main thread, inside whatever raylib call triggered them.
+
+A setter takes no argument: it installs a fixed trampoline, and the C object
+refers to the program's handler weakly, so the package's library loads even when
+the program defines none. A setter whose export is missing installs nothing and
+says so on stderr, leaving raylib's default in place. That is all `goose run` can
+do: a JIT run compiles the program into the compiler's process *after* the
+package's library is loaded, so its exports are in no symbol table the loader
+sees. Use `goose build`, which links statically, for a program that installs a
+callback.
 
 ```goose
 import raylib from "https://github.com/lamweilun/raygoose@v0.1.0";
@@ -252,6 +258,10 @@ the generated binding uses the static path.
   exports must stay on the thread that ran `goose_init`; raylib's audio
   processors run on the mixer thread and write the sample buffer in place. The
   trace log and the four file callbacks are covered — see [Callbacks](#callbacks).
+- **Callbacks need `goose build`.** A `goose run` loads the package's JIT library
+  before it compiles the program into the same process, so the program's exports
+  are in no symbol table the loader can see; the setters report and leave
+  raylib's defaults in place. A built executable links statically and binds them.
 - **`TextFormat` is missing on purpose.** Use `str()`.
 - **No pointer arithmetic.** `Mesh.vertices`, `Font.recs`, `Model.meshes`,
   `FilePathList.paths` and friends are opaque `u64` handles. You can pass them
